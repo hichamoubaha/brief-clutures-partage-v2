@@ -1,0 +1,1 @@
+La plateforme continue à promouvoir l’art et la culture, avec des fonctionnalités étendues pour offrir une expérience utilisateur enrichie avec des concepts avancés en PHP, POO, UML, et MySQL.
