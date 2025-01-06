@@ -35,6 +35,12 @@ CREATE TABLE articles (
     FOREIGN KEY (id_auteur) REFERENCES utilisateurs(id_utilisateur)
 );
 
+-- Modifier la table utilisateurs pour ajouter une colonne photo
+ALTER TABLE utilisateurs ADD COLUMN photo VARCHAR(255);
+
+-- Modifier la table articles pour ajouter une colonne photo
+ALTER TABLE articles ADD COLUMN photo VARCHAR(255);
+
 -- Insérer des catégories initiales
 INSERT INTO categories (nom_categorie) VALUES
 ('Peinture'),
@@ -45,13 +51,13 @@ INSERT INTO categories (nom_categorie) VALUES
 ('Photographie');
 
 -- Insérer des utilisateurs initiaux
-INSERT INTO utilisateurs (nom_utilisateur, email, mot_de_passe, role) VALUES
-('Admin1', 'admin1@example.com', 'admin1passwordhash', 'admin'),
-('Auteur1', 'auteur1@example.com', 'auteur1passwordhash', 'auteur'),
-('Utilisateur1', 'utilisateur1@example.com', 'utilisateur1passwordhash', 'utilisateur');
+INSERT INTO utilisateurs (nom_utilisateur, email, mot_de_passe, role, photo) VALUES
+('Admin1', 'admin1@example.com', 'admin1passwordhash', 'admin', 'admin1.jpg'),
+('Auteur1', 'auteur1@example.com', 'auteur1passwordhash', 'auteur', 'auteur1.jpg'),
+('Utilisateur1', 'utilisateur1@example.com', 'utilisateur1passwordhash', 'utilisateur', 'utilisateur1.jpg');
 
 -- Insérer des articles initiaux
-INSERT INTO articles (titre, contenu, id_categorie, id_auteur, statut) VALUES
-('Titre Article 1', 'Contenu de l\'Article 1', 1, 2, 'approuve'),
-('Titre Article 2', 'Contenu de l\'Article 2', 2, 2, 'en attente'),
-('Titre Article 3', 'Contenu de l\'Article 3', 3, 2, 'refuse');
+INSERT INTO articles (titre, contenu, id_categorie, id_auteur, statut, photo) VALUES
+('Titre Article 1', 'Contenu de l\'Article 1', 1, 2, 'approuve', 'article1.jpg'),
+('Titre Article 2', 'Contenu de l\'Article 2', 2, 2, 'en attente', 'article2.jpg'),
+('Titre Article 3', 'Contenu de l\'Article 3', 3, 2, 'refuse', 'article3.jpg');
