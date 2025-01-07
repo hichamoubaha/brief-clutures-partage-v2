@@ -14,3 +14,10 @@ CREATE TABLE utilisateurs (
     photo VARCHAR(255),
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Table categories
+CREATE TABLE categories (
+    id_categorie INT AUTO_INCREMENT PRIMARY KEY,
+    nom_categorie VARCHAR(50) NOT NULL UNIQUE,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
