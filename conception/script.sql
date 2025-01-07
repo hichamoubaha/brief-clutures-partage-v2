@@ -85,3 +85,38 @@ CREATE TABLE article_tags (
     FOREIGN KEY (id_article) REFERENCES articles(id_article),
     FOREIGN KEY (id_tag) REFERENCES tags(id_tag)
 );
+
+-- Insérer des catégories initiales
+INSERT INTO categories (nom_categorie) VALUES
+('Peinture'),
+('Musique'),
+('Littérature'),
+('Cinéma'),
+('Sculpture'),
+('Photographie');
+
+-- Insérer des utilisateurs initiaux
+INSERT INTO utilisateurs (nom_utilisateur, email, mot_de_passe, role, photo) VALUES
+('Admin1', 'admin1@example.com', 'admin1passwordhash', 'admin', 'admin1.jpg'),
+('Auteur1', 'auteur1@example.com', 'auteur1passwordhash', 'auteur', 'auteur1.jpg'),
+('Utilisateur1', 'utilisateur1@example.com', 'utilisateur1passwordhash', 'utilisateur', 'utilisateur1.jpg');
+
+-- Insérer des articles initiaux
+INSERT INTO articles (titre, contenu, id_categorie, id_auteur, statut, photo) VALUES
+('Titre Article 1', 'Contenu de l\'Article 1', 1, 2, 'approuve', 'article1.jpg'),
+('Titre Article 2', 'Contenu de l\'Article 2', 2, 2, 'en attente', 'article2.jpg'),
+('Titre Article 3', 'Contenu de l\'Article 3', 3, 2, 'refuse', 'article3.jpg');
+
+-- Insérer des tags initiaux
+INSERT INTO tags (nom_tag) VALUES
+('Art moderne'),
+('Classique'),
+('Contemporain'),
+('Abstrait'),
+('Réalisme');
+
+-- Associer des tags aux articles
+INSERT INTO article_tags (id_article, id_tag) VALUES
+(1, 1), (1, 3), (1, 4),
+(2, 2), (2, 5),
+(3, 1), (3, 3);
