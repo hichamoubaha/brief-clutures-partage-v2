@@ -200,3 +200,8 @@ switch ($page) {
 
 include 'views/footer.php';
 
+
+
+
+// lts go hicham
+
