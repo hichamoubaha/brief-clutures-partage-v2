@@ -1,7 +1,7 @@
 <?php
 class Database {
     private $host = "localhost";
-    private $db_name = "art_culture_platform";
+    private $db_name = "culture_platform_v2";
     private $username = "root";
     private $password = "";
     private $conn;
