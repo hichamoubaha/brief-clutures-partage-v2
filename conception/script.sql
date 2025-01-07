@@ -69,3 +69,19 @@ CREATE TABLE favoris (
     FOREIGN KEY (id_utilisateur) REFERENCES utilisateurs(id_utilisateur),
     UNIQUE KEY (id_article, id_utilisateur)
 );
+
+-- Table tags
+CREATE TABLE tags (
+    id_tag INT AUTO_INCREMENT PRIMARY KEY,
+    nom_tag VARCHAR(50) NOT NULL UNIQUE,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table article_tags (relation many-to-many entre articles et tags)
+CREATE TABLE article_tags (
+    id_article INT,
+    id_tag INT,
+    PRIMARY KEY (id_article, id_tag),
+    FOREIGN KEY (id_article) REFERENCES articles(id_article),
+    FOREIGN KEY (id_tag) REFERENCES tags(id_tag)
+);
