@@ -47,3 +47,14 @@ CREATE TABLE commentaires (
     FOREIGN KEY (id_article) REFERENCES articles(id_article),
     FOREIGN KEY (id_utilisateur) REFERENCES utilisateurs(id_utilisateur)
 );
+
+-- Table likes
+CREATE TABLE likes (
+    id_like INT AUTO_INCREMENT PRIMARY KEY,
+    id_article INT,
+    id_utilisateur INT,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_article) REFERENCES articles(id_article),
+    FOREIGN KEY (id_utilisateur) REFERENCES utilisateurs(id_utilisateur),
+    UNIQUE KEY (id_article, id_utilisateur)
+);
