@@ -58,3 +58,14 @@ CREATE TABLE likes (
     FOREIGN KEY (id_utilisateur) REFERENCES utilisateurs(id_utilisateur),
     UNIQUE KEY (id_article, id_utilisateur)
 );
+
+-- Table favoris
+CREATE TABLE favoris (
+    id_favori INT AUTO_INCREMENT PRIMARY KEY,
+    id_article INT,
+    id_utilisateur INT,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_article) REFERENCES articles(id_article),
+    FOREIGN KEY (id_utilisateur) REFERENCES utilisateurs(id_utilisateur),
+    UNIQUE KEY (id_article, id_utilisateur)
+);
