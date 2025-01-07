@@ -36,3 +36,14 @@ CREATE TABLE articles (
     FOREIGN KEY (id_categorie) REFERENCES categories(id_categorie),
     FOREIGN KEY (id_auteur) REFERENCES utilisateurs(id_utilisateur)
 );
+
+-- Table commentaires
+CREATE TABLE commentaires (
+    id_commentaire INT AUTO_INCREMENT PRIMARY KEY,
+    id_article INT,
+    id_utilisateur INT,
+    contenu TEXT NOT NULL,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_article) REFERENCES articles(id_article),
+    FOREIGN KEY (id_utilisateur) REFERENCES utilisateurs(id_utilisateur)
+);
