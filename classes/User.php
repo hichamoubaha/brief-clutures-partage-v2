@@ -1,10 +1,32 @@
 <?php
+require_once 'EmailSender.php';
+
 class User {
     private $conn;
     private $table_name = "utilisateurs";
 
     public function __construct($db) {
         $this->conn = $db->getConnection();
+    }
+
+    public function register($nom_utilisateur, $email, $password, $role, $photo) {
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        
+        $query = "INSERT INTO " . $this->table_name . " (nom_utilisateur, email, mot_de_passe, role, photo) VALUES (:nom_utilisateur, :email, :password, :role, :photo)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':nom_utilisateur', $nom_utilisateur);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':password', $hashed_password);
+        $stmt->bindParam(':role', $role);
+        $stmt->bindParam(':photo', $photo);
+
+        if ($stmt->execute()) {
+            $emailSender = new EmailSender();
+            $emailSender->sendWelcomeEmail($email, $role);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public function login($email, $password) {
@@ -14,40 +36,43 @@ class User {
         $stmt->execute();
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($user && password_verify($password, $user['mot_de_passe'])) {
+        if ($user && password_verify($password, $user['mot_de_passe']) && $user['role'] !== 'banned') {
             $_SESSION['user_id'] = $user['id_utilisateur'];
             $_SESSION['role'] = $user['role'];
-            header('Location: index.php');
+            return true;
         } else {
-            echo "Invalid email or password.";
+            return false;
         }
     }
 
-    public function register($nom_utilisateur, $email, $password, $role) {
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    public function updateProfile($id, $nom_utilisateur, $email, $password, $photo) {
+        $query = "UPDATE " . $this->table_name . " SET nom_utilisateur = :nom_utilisateur, email = :email";
         
-        // Ensure only valid roles can be registered
-        $allowed_roles = ['auteur', 'utilisateur'];
-        $role = in_array($role, $allowed_roles) ? $role : 'utilisateur';
-
-        $query = "INSERT INTO " . $this->table_name . " (nom_utilisateur, email, mot_de_passe, role) VALUES (:nom_utilisateur, :email, :password, :role)";
+        if (!empty($password)) {
+            $query .= ", mot_de_passe = :password";
+        }
+        
+        if (!empty($photo)) {
+            $query .= ", photo = :photo";
+        }
+        
+        $query .= " WHERE id_utilisateur = :id";
+        
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':nom_utilisateur', $nom_utilisateur);
         $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':password', $hashed_password);
-        $stmt->bindParam(':role', $role);
-
-        if ($stmt->execute()) {
-            header('Location: index.php?page=login');
-        } else {
-            echo "Error registering user.";
+        $stmt->bindParam(':id', $id);
+        
+        if (!empty($password)) {
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $stmt->bindParam(':password', $hashed_password);
         }
-    }
+        
+        if (!empty($photo)) {
+            $stmt->bindParam(':photo', $photo);
+        }
 
-    public function logout() {
-        session_unset();
-        session_destroy();
-        header('Location: index.php');
+        return $stmt->execute();
     }
 
     public function getAllUsers() {
@@ -66,22 +91,23 @@ class User {
     }
 
     public function banUser($id) {
-        $query = "UPDATE " . $this->table_name . " SET statut = 'banni' WHERE id_utilisateur = :id";
+        $query = "UPDATE " . $this->table_name . " SET role = 'banned' WHERE id_utilisateur = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }
 
     public function unbanUser($id) {
-        $query = "UPDATE " . $this->table_name . " SET statut = 'actif' WHERE id_utilisateur = :id";
+        $query = "UPDATE " . $this->table_name . " SET role = 'utilisateur' WHERE id_utilisateur = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }
 
-    public function deleteUser($id) {
-        $query = "DELETE FROM " . $this->table_name . " WHERE id_utilisateur = :id";
+    public function changeUserRole($id, $newRole) {
+        $query = "UPDATE " . $this->table_name . " SET role = :role WHERE id_utilisateur = :id";
         $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':role', $newRole);
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }
