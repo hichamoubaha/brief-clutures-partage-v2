@@ -135,3 +135,15 @@ GROUP BY a.id_article
 ORDER BY nombre_likes DESC;
 
 
+-- 2 Création d'une procédure stockée 
+
+DELIMITER $$
+
+CREATE PROCEDURE bannir_utilisateur(IN p_id_utilisateur INT)
+BEGIN
+    UPDATE utilisateurs
+    SET role = 'banned'
+    WHERE id_utilisateur = p_id_utilisateur;
+END $$
+
+DELIMITER ;
