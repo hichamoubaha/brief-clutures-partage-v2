@@ -1,47 +1,41 @@
 <?php
 class Category {
-    private $conn;
-    private $table_name = "categories";
+    private $db;
 
     public function __construct($db) {
-        $this->conn = $db->getConnection();
+        $this->db = $db;
     }
 
     public function getAllCategories() {
-        $query = "SELECT * FROM " . $this->table_name . " ORDER BY nom_categorie";
-        $stmt = $this->conn->prepare($query);
+        $query = "SELECT * FROM categories ORDER BY nom_categorie";
+        $stmt = $this->db->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function createCategory($nom_categorie) {
-        $query = "INSERT INTO " . $this->table_name . " (nom_categorie) VALUES (:nom_categorie)";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':nom_categorie', $nom_categorie);
-        return $stmt->execute();
-    }
-
-    public function updateCategory($id_categorie, $nom_categorie) {
-        $query = "UPDATE " . $this->table_name . " SET nom_categorie = :nom_categorie WHERE id_categorie = :id_categorie";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id_categorie', $id_categorie);
-        $stmt->bindParam(':nom_categorie', $nom_categorie);
-        return $stmt->execute();
-    }
-
-    public function deleteCategory($id_categorie) {
-        $query = "DELETE FROM " . $this->table_name . " WHERE id_categorie = :id_categorie";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id_categorie', $id_categorie);
-        return $stmt->execute();
-    }
-
-    public function getCategoryById($id_categorie) {
-        $query = "SELECT * FROM " . $this->table_name . " WHERE id_categorie = :id_categorie";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id_categorie', $id_categorie);
-        $stmt->execute();
+    public function getCategoryById($id) {
+        $query = "SELECT * FROM categories WHERE id_categorie = ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function addCategory($name) {
+        $query = "INSERT INTO categories (nom_categorie) VALUES (?)";
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([$name]);
+    }
+
+    public function updateCategory($id, $name) {
+        $query = "UPDATE categories SET nom_categorie = ? WHERE id_categorie = ?";
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([$name, $id]);
+    }
+
+    public function deleteCategory($id) {
+        $query = "DELETE FROM categories WHERE id_categorie = ?";
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([$id]);
     }
 }
 

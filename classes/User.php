@@ -1,115 +1,93 @@
 <?php
-require_once 'EmailSender.php';
-
 class User {
-    private $conn;
-    private $table_name = "utilisateurs";
+    private $db;
 
     public function __construct($db) {
-        $this->conn = $db->getConnection();
+        $this->db = $db;
     }
 
-    public function register($nom_utilisateur, $email, $password, $role, $photo) {
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        
-        $query = "INSERT INTO " . $this->table_name . " (nom_utilisateur, email, mot_de_passe, role, photo) VALUES (:nom_utilisateur, :email, :password, :role, :photo)";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':nom_utilisateur', $nom_utilisateur);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':password', $hashed_password);
-        $stmt->bindParam(':role', $role);
-        $stmt->bindParam(':photo', $photo);
-
-        if ($stmt->execute()) {
-            $emailSender = new EmailSender();
-            $emailSender->sendWelcomeEmail($email, $role);
-            return true;
-        } else {
+    public function register($username, $email, $password, $role, $photo) {
+        if ($username === null || $email === null || $password === null || $role === null) {
             return false;
         }
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        $query = "INSERT INTO utilisateurs (nom_utilisateur, email, mot_de_passe, role, photo) VALUES (?, ?, ?, ?, ?)";
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([$username, $email, $hashedPassword, $role, $photo]);
     }
 
     public function login($email, $password) {
-        $query = "SELECT * FROM " . $this->table_name . " WHERE email = :email";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
+        $query = "SELECT * FROM utilisateurs WHERE email = ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($user && password_verify($password, $user['mot_de_passe']) && $user['role'] !== 'banned') {
+        if ($user && password_verify($password, $user['mot_de_passe'])) {
             $_SESSION['user_id'] = $user['id_utilisateur'];
+            $_SESSION['username'] = $user['nom_utilisateur'];
             $_SESSION['role'] = $user['role'];
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
-    public function updateProfile($id, $nom_utilisateur, $email, $password, $photo) {
-        $query = "UPDATE " . $this->table_name . " SET nom_utilisateur = :nom_utilisateur, email = :email";
-        
-        if (!empty($password)) {
-            $query .= ", mot_de_passe = :password";
-        }
-        
-        if (!empty($photo)) {
-            $query .= ", photo = :photo";
-        }
-        
-        $query .= " WHERE id_utilisateur = :id";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':nom_utilisateur', $nom_utilisateur);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':id', $id);
-        
-        if (!empty($password)) {
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $stmt->bindParam(':password', $hashed_password);
-        }
-        
-        if (!empty($photo)) {
-            $stmt->bindParam(':photo', $photo);
-        }
+    public function logout() {
+        session_unset();
+        session_destroy();
+    }
 
-        return $stmt->execute();
+    public function getUserById($id) {
+        $query = "SELECT * FROM utilisateurs WHERE id_utilisateur = ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function getAllUsers() {
-        $query = "SELECT * FROM " . $this->table_name . " ORDER BY id_utilisateur DESC";
-        $stmt = $this->conn->prepare($query);
+        $query = "SELECT * FROM utilisateurs ORDER BY nom_utilisateur";
+        $stmt = $this->db->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getUserById($id) {
-        $query = "SELECT * FROM " . $this->table_name . " WHERE id_utilisateur = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id);
-        $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+    public function updateProfile($id, $username, $email, $password, $photo) {
+        $query = "UPDATE utilisateurs SET nom_utilisateur = ?, email = ?";
+        $params = [$username, $email];
+
+        if ($password) {
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+            $query .= ", mot_de_passe = ?";
+            $params[] = $hashedPassword;
+        }
+
+        if ($photo) {
+            $query .= ", photo = ?";
+            $params[] = $photo;
+        }
+
+        $query .= " WHERE id_utilisateur = ?";
+        $params[] = $id;
+
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute($params);
+    }
+
+    public function changeUserRole($id, $role) {
+        $query = "UPDATE utilisateurs SET role = ? WHERE id_utilisateur = ?";
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([$role, $id]);
     }
 
     public function banUser($id) {
-        $query = "UPDATE " . $this->table_name . " SET role = 'banned' WHERE id_utilisateur = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id);
-        return $stmt->execute();
+        $query = "UPDATE utilisateurs SET role = 'banned' WHERE id_utilisateur = ?";
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([$id]);
     }
 
     public function unbanUser($id) {
-        $query = "UPDATE " . $this->table_name . " SET role = 'utilisateur' WHERE id_utilisateur = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id);
-        return $stmt->execute();
-    }
-
-    public function changeUserRole($id, $newRole) {
-        $query = "UPDATE " . $this->table_name . " SET role = :role WHERE id_utilisateur = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':role', $newRole);
-        $stmt->bindParam(':id', $id);
-        return $stmt->execute();
+        $query = "UPDATE utilisateurs SET role = 'utilisateur' WHERE id_utilisateur = ?";
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([$id]);
     }
 }
 

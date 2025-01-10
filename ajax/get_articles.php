@@ -22,11 +22,11 @@ $total_pages = ceil($total_articles / $per_page);
 $articles_html = '';
 foreach ($articles as $article) {
     $articles_html .= '
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+    <div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:scale-105">
         ' . (!empty($article['photo']) ? '<img src="' . htmlspecialchars($article['photo']) . '" alt="' . htmlspecialchars($article['titre']) . '" class="w-full h-48 object-cover">' : '<div class="w-full h-48 bg-gray-200 flex items-center justify-center"><span class="text-gray-500">Pas d\'image</span></div>') . '
         <div class="p-6">
             <h2 class="text-xl font-semibold mb-2">
-                <a href="index.php?page=article&id=' . $article['id_article'] . '" class="text-indigo-600 hover:text-indigo-800 transition-colors">
+                <a href="index.php?page=article&id=' . $article['id_article'] . '" class="text-blue-600 hover:text-blue-800 transition-colors">
                     ' . htmlspecialchars($article['titre']) . '
                 </a>
             </h2>
@@ -43,8 +43,8 @@ $pagination_html = '';
 if ($total_pages > 1) {
     $pagination_html .= '<div class="flex justify-center space-x-2">';
     for ($i = 1; $i <= $total_pages; $i++) {
-        $active_class = $i === $page ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 hover:bg-indigo-100';
-        $pagination_html .= '<a href="#" class="pagination-link ' . $active_class . ' font-bold py-2 px-4 rounded-full transition-colors" data-page="' . $i . '">' . $i . '</a>';
+        $active_class = $i === $page ? 'bg-blue-500 text-white' : 'bg-white text-blue-500 hover:bg-blue-100';
+        $pagination_html .= '<a href="#" class="pagination-link ' . $active_class . ' font-bold py-2 px-4 rounded transition-colors" data-page="' . $i . '">' . $i . '</a>';
     }
     $pagination_html .= '</div>';
 }
@@ -53,4 +53,3 @@ echo json_encode([
     'articles' => $articles_html,
     'pagination' => $pagination_html
 ]);
-

@@ -1,46 +1,39 @@
 <?php
 class Like {
-    private $conn;
-    private $table_name = "likes";
+    private $db;
 
     public function __construct($db) {
-        $this->conn = $db->getConnection();
+        $this->db = $db;
     }
 
-    public function addLike($id_article, $id_utilisateur) {
-        $query = "INSERT INTO " . $this->table_name . " (id_article, id_utilisateur) VALUES (:id_article, :id_utilisateur)";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id_article', $id_article);$stmt->bindParam(':id_utilisateur', $id_utilisateur);
-        if ($stmt->execute()) {
-            $this->addToFavorites($id_article, $id_utilisateur);
-            return true;
+    public function toggleLike($articleId, $userId) {
+        $query = "SELECT * FROM likes WHERE id_article = ? AND id_utilisateur = ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$articleId, $userId]);
+        
+        if ($stmt->rowCount() > 0) {
+            $query = "DELETE FROM likes WHERE id_article = ? AND id_utilisateur = ?";
+        } else {
+            $query = "INSERT INTO likes (id_article, id_utilisateur) VALUES (?, ?)";
         }
-        return false;
+        
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([$articleId, $userId]);
     }
 
-    public function removeLike($id_article, $id_utilisateur) {
-        $query = "DELETE FROM " . $this->table_name . " WHERE id_article = :id_article AND id_utilisateur = :id_utilisateur";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id_article', $id_article);
-        $stmt->bindParam(':id_utilisateur', $id_utilisateur);
-        return $stmt->execute();
-    }
-
-    public function getLikeCount($id_article) {
-        $query = "SELECT COUNT(*) as count FROM " . $this->table_name . " WHERE id_article = :id_article";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id_article', $id_article);
-        $stmt->execute();
+    public function getLikeCount($articleId) {
+        $query = "SELECT COUNT(*) as count FROM likes WHERE id_article = ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$articleId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result['count'];
     }
 
-    private function addToFavorites($id_article, $id_utilisateur) {
-        $query = "INSERT INTO favoris (id_article, id_utilisateur) VALUES (:id_article, :id_utilisateur)";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id_article', $id_article);
-        $stmt->bindParam(':id_utilisateur', $id_utilisateur);
-        return $stmt->execute();
+    public function isLikedByUser($articleId, $userId) {
+        $query = "SELECT * FROM likes WHERE id_article = ? AND id_utilisateur = ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$articleId, $userId]);
+        return $stmt->rowCount() > 0;
     }
 }
 
