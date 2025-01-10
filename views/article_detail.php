@@ -85,35 +85,24 @@ $is_authenticated = isset($_SESSION['user_id']);
 </div>
 
 <script>
-    document.getElementById('download-pdf').addEventListener('click', function() {
-        // Define the document content
-        const docDefinition = {
-            content: [
-                { text: '<?php echo addslashes(htmlspecialchars($articleData->titre)); ?>', style: 'header' },
-                { text: 'Auteur: <?php echo addslashes(htmlspecialchars($articleData->nom_utilisateur)); ?>', style: 'subheader' },
-                { text: 'Catégorie: <?php echo addslashes(htmlspecialchars($articleData->nom_categorie)); ?>', style: 'subheader' },
-                { text: 'Publié le: <?php echo date('d/m/Y', strtotime($articleData->date_creation)); ?>', style: 'subheader' },
-                { text: '', margin: [0, 10] }, // Empty line
-                { text: '<?php echo nl2br(htmlspecialchars($articleData->contenu)); ?>', style: 'content' }
-            ],
-            styles: {
-                header: {
-                    fontSize: 22,
-                    bold: true,
-                    margin: [0, 0, 0, 10]
-                },
-                subheader: {
-                    fontSize: 12,
-                    margin: [0, 5, 0, 5]
-                },
-                content: {
-                    fontSize: 14,
-                    margin: [0, 5, 0, 5]
-                }
-            }
-        };
+   document.getElementById('download-pdf').addEventListener('click', function() {
+    // Define the content to be downloaded as PDF
+    const content = `
+        <h1>${<?php echo json_encode($articleData->titre); ?>}</h1>
+        <p><strong>Auteur:</strong> ${<?php echo json_encode($articleData->nom_utilisateur); ?>}</p>
+        <p><strong>Catégorie:</strong> ${<?php echo json_encode($articleData->nom_categorie); ?>}</p>
+        <p><strong>Publié le:</strong> ${<?php echo json_encode(date('d/m/Y', strtotime($articleData->date_creation))); ?>}</p>
+        <p>${<?php echo json_encode(nl2br($articleData->contenu)); ?>}</p>
+    `;
 
-        // Create the PDF
-        pdfMake.createPdf(docDefinition).download('<?php echo addslashes(htmlspecialchars($articleData->titre)); ?>.pdf');
-    });
+    // Create the PDF using html2pdf
+    const element = document.createElement('div');
+    element.innerHTML = content;
+
+    // Use html2pdf to generate and download the PDF
+    html2pdf()
+        .from(element)
+        .save('<?php echo addslashes(htmlspecialchars($articleData->titre)); ?>.pdf');
+});
+
 </script>
