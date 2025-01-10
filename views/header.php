@@ -5,28 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plateforme Art et Culture</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
-    <header class="bg-white shadow-md">
-        <nav class="container mx-auto px-6 py-3">
+    <header class="bg-white shadow-lg border-b border-gray-200">
+        <nav class="container mx-auto px-6">
             <div class="flex justify-between items-center">
-                <div>
-                    <a href="index.php" class="text-xl font-bold text-gray-800">Art & Culture</a>
+                <div class="flex items-center space-x-2">
+                    <!-- Logo/Brand -->
+                    <a href="index.php" class="flex items-center group">
+                    <img src="./uploads/logo.png" alt="Art & Culture Logo" class="h-24 w-24">
+                    </a>
                 </div>
-                <div class="flex items-center">
-                    <a href="index.php" class="text-gray-800 hover:text-blue-600 px-3 py-2">Accueil</a>
-                    <a href="index.php?page=search" class="text-gray-800 hover:text-blue-600 px-3 py-2">Recherche</a>
+
+                <!-- Navigation Links -->
+                <div class="flex items-center space-x-8">
+                    <a href="index.php" class="text-gray-600 hover:text-indigo-600 font-medium transition-colors duration-300 border-b-2 border-transparent hover:border-indigo-600 py-1">
+                        Accueil
+                    </a>
+                    
                     <?php if (isset($_SESSION['user_id'])): ?>
-                        <a href="index.php?page=dashboard" class="text-gray-800 hover:text-blue-600 px-3 py-2">Tableau de bord</a>
-                        <a href="index.php?page=profile" class="text-gray-800 hover:text-blue-600 px-3 py-2">Profil</a>
-                        <a href="index.php?page=logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md ml-2">Déconnexion</a>
+                        <?php if ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'auteur'): ?>
+                            <a href="index.php?page=dashboard" class="text-gray-600 hover:text-indigo-600 font-medium transition-colors duration-300 border-b-2 border-transparent hover:border-indigo-600 py-1">
+                                Dashboard
+                            </a>
+                        <?php endif; ?>
+                        <a href="index.php?page=edit_profile" class="text-gray-600 hover:text-indigo-600 font-medium transition-colors duration-300 border-b-2 border-transparent hover:border-indigo-600 py-1">
+            Modifier le profil
+        </a>
+                        <a href="index.php?page=logout" class="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg font-medium transition-colors duration-300">
+                            Déconnexion
+                        </a>
                     <?php else: ?>
-                        <a href="index.php?page=login" class="text-gray-800 hover:text-blue-600 px-3 py-2">Connexion</a>
-                        <a href="index.php?page=register" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md ml-2">Inscription</a>
+                        <a href="index.php?page=login" class="text-gray-600 hover:text-indigo-600 font-medium transition-colors duration-300 border-b-2 border-transparent hover:border-indigo-600 py-1">
+                            Connexion
+                        </a>
+                        
+                        <a href="index.php?page=register" class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-lg font-medium transition-colors duration-300">
+                            Inscription
+                        </a>
                     <?php endif; ?>
                 </div>
             </div>
+           
         </nav>
     </header>
-    <main class="container mx-auto px-6 py-8 flex-grow">
+    <main class="container mx-auto px-4 py-8 flex-grow">
+
+
+</body>
+</html>
 
