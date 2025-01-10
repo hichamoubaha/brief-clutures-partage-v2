@@ -1,37 +1,26 @@
 <?php
 class Comment {
-    private $db;
+    private $conn;
+    private $table_name = "commentaires";
 
     public function __construct($db) {
-        $this->db = $db;
+        $this->conn = $db->getConnection();
     }
 
-    public function addComment($articleId, $userId, $content) {
-        $query = "INSERT INTO commentaires (id_article, id_utilisateur, contenu) VALUES (?, ?, ?)";
-        $stmt = $this->db->prepare($query);
-        return $stmt->execute([$articleId, $userId, $content]);
+    public function addComment($id_article, $id_utilisateur, $contenu) {
+        $query = "INSERT INTO " . $this->table_name . " (id_article, id_utilisateur, contenu) VALUES (:id_article, :id_utilisateur, :contenu)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id_article', $id_article);
+        $stmt->bindParam(':id_utilisateur', $id_utilisateur);
+        $stmt->bindParam(':contenu', $contenu);
+        return $stmt->execute();
     }
 
-    public function getCommentsByArticle($articleId) {
-        $query = "SELECT c.*, u.nom_utilisateur FROM commentaires c 
-                  JOIN utilisateurs u ON c.id_utilisateur = u.id_utilisateur 
-                  WHERE c.id_article = ? 
-                  ORDER BY c.date_creation DESC";
-        $stmt = $this->db->prepare($query);
-        $stmt->execute([$articleId]);
+    public function getCommentsByArticle($id_article) {
+        $query = "SELECT c.*, u.nom_utilisateur FROM " . $this->table_name . " c JOIN utilisateurs u ON c.id_utilisateur = u.id_utilisateur WHERE c.id_article = :id_article ORDER BY c.date_creation DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id_article', $id_article);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
-    public function deleteComment($id, $userId, $userRole) {
-        if ($userRole === 'admin') {
-            $query = "DELETE FROM commentaires WHERE id_commentaire = ?";
-            $stmt = $this->db->prepare($query);
-            return $stmt->execute([$id]);
-        } else {
-            $query = "DELETE FROM commentaires WHERE id_commentaire = ? AND id_utilisateur = ?";
-            $stmt = $this->db->prepare($query);
-            return $stmt->execute([$id, $userId]);
-        }
-    }
 }
-
