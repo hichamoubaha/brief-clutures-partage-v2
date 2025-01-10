@@ -1,24 +1,20 @@
 <?php
 session_start();
-define('ROOT_PATH', __DIR__);
-require_once ROOT_PATH . '/config/Database.php';
-require_once ROOT_PATH . '/classes/User.php';
-require_once ROOT_PATH . '/classes/Article.php';
-require_once ROOT_PATH . '/classes/Category.php';
-require_once ROOT_PATH . '/classes/Comment.php';
-require_once ROOT_PATH . '/classes/Like.php';
-require_once ROOT_PATH . '/classes/Favorite.php';
-require_once ROOT_PATH . '/classes/Tag.php';
+require_once 'classes/Database.php';
+require_once 'classes/User.php';
+require_once 'classes/Article.php';
+require_once 'classes/Category.php';
+require_once 'classes/Comment.php';
+require_once 'classes/Favorite.php';
+require_once 'classes/Like.php';
 
 $db = new Database();
-$dbConnection = $db->getConnection();
-$user = new User($dbConnection);
-$article = new Article($dbConnection);
-$category = new Category($dbConnection);
-$comment = new Comment($dbConnection);
-$like = new Like($dbConnection);
-$favorite = new Favorite($dbConnection);
-$tag = new Tag($dbConnection);
+$user = new User($db);
+$article = new Article($db);
+$category = new Category($db);
+$comment = new Comment($db);
+$favorite = new Favorite($db);
+$like = new Like($db);
 
 $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 
@@ -27,335 +23,241 @@ include 'views/header.php';
 switch ($page) {
     case 'home':
         $categories = $category->getAllCategories();
-        $latestArticles = $article->getLatestArticles(6);
+        $latestArticles = $article->getLatestArticles(1, 6);  // Get first page of latest articles
         include 'views/home.php';
         break;
+        case 'article':
+            if (isset($_GET['id'])) {
+                $is_authenticated = isset($_SESSION['user_id']);
+                $articleData = $article->getArticleWithDetails($_GET['id'], $is_authenticated);
+                $comments = $comment->getCommentsByArticle($_GET['id']);
+                $likesCount = $like->getLikesByArticle($_GET['id']);
+                if ($articleData) {
+                    include 'views/article_detail.php';
+                } else {
+                    header('Location: index.php');
+                }
+            } else {
+                header('Location: index.php');
+            }
+            break;
+    
+        case 'add_comment':
+            if (isset($_POST['id_article']) && isset($_SESSION['user_id'])) {
+                $comment->addComment($_POST['id_article'], $_SESSION['user_id'], $_POST['contenu']);
+                header('Location: index.php?page=article&id=' . $_POST['id_article']);
+            }
+            break;
+    
+        case 'like_article':
+            if (isset($_POST['id_article']) && isset($_SESSION['user_id'])) {
+                $like->addLike($_POST['id_article'], $_SESSION['user_id']);
+                header('Location: index.php?page=article&id=' . $_POST['id_article']);
+            }
+            break;
+    
+        case 'favorite_article':
+            if (isset($_POST['id_article']) && isset($_SESSION['user_id'])) {
+                $favorite->addFavorite($_POST['id_article'], $_SESSION['user_id']);
+                header('Location: index.php?page=article&id=' . $_POST['id_article']);
+            }
+            break;
     case 'login':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $email = $_POST['email'];
-            $password = $_POST['password'];
-            if ($user->login($email, $password)) {
-                header('Location: index.php');
-            } else {
-                $error = "Invalid email or password";
-            }
+            $user->login($_POST['email'], $_POST['password']);
+        } else {
+            include 'views/login.php';
         }
-        include 'views/login.php';
         break;
     case 'register':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['nom_utilisateur'];
-            $email = $_POST['email'];
-            $password = $_POST['password'];
-            $role = $_POST['role'];
-            $photo = '';
-            if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-                $uploadDir = 'uploads/profiles/';
-                if (!file_exists($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
-                }
-                $photoName = uniqid() . '_' . basename($_FILES['photo']['name']);
-                $uploadFile = $uploadDir . $photoName;
-                if (move_uploaded_file($_FILES['photo']['tmp_name'], $uploadFile)) {
-                    $photo = $uploadFile;
-                }
-            }
-            if ($user->register($username, $email, $password, $role, $photo)) {
-                header('Location: index.php?page=login');
-            } else {
-                $error = "Registration failed";
-            }
+            $photo = isset($_FILES['photo']) ? $_FILES['photo'] : null;
+            $user->register($_POST['nom_utilisateur'], $_POST['email'], $_POST['password'], $_POST['role'], $photo);
+        } else {
+            include 'views/register.php';
         }
-        include 'views/register.php';
         break;
-    case 'logout':
-        $user->logout();
-        header('Location: index.php');
-        break;
-    case 'article':
-        if (isset($_GET['id'])) {
-            $articleData = $article->getArticleById($_GET['id']);
-            $comments = $comment->getCommentsByArticle($_GET['id']);
-            $tags = $tag->getTagsByArticle($_GET['id']);
-            include 'views/article.php';
+    case 'dashboard':
+        if (isset($_SESSION['user_id'])) {
+            $userRole = $_SESSION['role'];
+            if ($userRole === 'admin') {
+                $allUsers = $user->getAllUsers();
+                $allCategories = $category->getAllCategories();
+                $pendingArticles = $article->getPendingArticles();
+            } elseif ($userRole === 'auteur') {
+                $userArticles = $article->getUserArticles($_SESSION['user_id']); // Corrected method name
+            }
+            include 'views/dashboard.php';
         } else {
             header('Location: index.php');
         }
         break;
     case 'create_article':
-        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'auteur') {
-            header('Location: index.php');
-            exit;
-        }
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $title = $_POST['title'];
-            $content = $_POST['content'];
-            $categoryId = $_POST['category'];
-            $tags = isset($_POST['tags']) ? $_POST['tags'] : [];
-            $photo = '';
-            if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-                $uploadDir = 'uploads/articles/';
-                $photoName = uniqid() . '_' . basename($_FILES['photo']['name']);
-                $uploadFile = $uploadDir . $photoName;
-                if (move_uploaded_file($_FILES['photo']['tmp_name'], $uploadFile)) {
-                    $photo = $uploadFile;
-                }
-            }
-            if ($article->createArticle($title, $content, $categoryId, $_SESSION['user_id'], $photo, $tags)) {
-                header('Location: index.php?page=dashboard');
-            } else {
-                $error = "Failed to create article";
-            }
-        }
-        $categories = $category->getAllCategories();
-        $allTags = $tag->getAllTags();
-        include 'views/create_article.php';
-        break;
-    case 'edit_article':
-        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'auteur' && $_SESSION['role'] !== 'admin')) {
-            header('Location: index.php');
-            exit;
-        }
-        if (isset($_GET['id'])) {
-            $articleData = $article->getArticleById($_GET['id']);
+        if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'auteur') {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $title = $_POST['title'];
-                $content = $_POST['content'];
-                $categoryId = $_POST['category'];
-                $tags = isset($_POST['tags']) ? $_POST['tags'] : [];
-                $photo = $articleData['photo'];
+                $photo = '';
                 if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-                    $uploadDir = 'uploads/articles/';
+                    $uploadDir = 'uploads/';
                     $photoName = uniqid() . '_' . basename($_FILES['photo']['name']);
                     $uploadFile = $uploadDir . $photoName;
                     if (move_uploaded_file($_FILES['photo']['tmp_name'], $uploadFile)) {
                         $photo = $uploadFile;
                     }
                 }
-                if ($article->updateArticle($_GET['id'], $title, $content, $categoryId, $photo, $tags)) {
+                $article->createArticle($_POST['titre'], $_POST['contenu'], $_POST['id_categorie'], $_SESSION['user_id'], $photo);
+            } else {
+                $allCategories = $category->getAllCategories();
+                include 'views/create_article.php';
+            }
+        } else {
+            header('Location: index.php');
+        }
+        break;
+    case 'edit_article':
+        if (isset($_SESSION['user_id']) && isset($_GET['id'])) {
+            $articleData = $article->getArticleById($_GET['id']);
+            if ($articleData && ($articleData['id_auteur'] == $_SESSION['user_id'] || $_SESSION['role'] === 'admin')) {
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $photo = $articleData['photo'];
+                    if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+                        $uploadDir = 'uploads/';
+                        $photoName = uniqid() . '_' . basename($_FILES['photo']['name']);
+                        $uploadFile = $uploadDir . $photoName;
+                        if (move_uploaded_file($_FILES['photo']['tmp_name'], $uploadFile)) {
+                            $photo = $uploadFile;
+                            if (!empty($articleData['photo']) && file_exists($articleData['photo'])) {
+                                unlink($articleData['photo']);
+                            }
+                        }
+                    }
+                    $article->updateArticle($_GET['id'], $_POST['titre'], $_POST['contenu'], $_POST['id_categorie'], $photo);
                     header('Location: index.php?page=dashboard');
                 } else {
-                    $error = "Failed to update article";
+                    $allCategories = $category->getAllCategories();
+                    include 'views/edit_article.php';
                 }
+            } else {
+                header('Location: index.php');
             }
-            $categories = $category->getAllCategories();
-            $allTags = $tag->getAllTags();
-            $articleTags = $tag->getTagsByArticle($_GET['id']);
-            include 'views/edit_article.php';
         } else {
             header('Location: index.php');
         }
         break;
     case 'delete_article':
-        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'auteur' && $_SESSION['role'] !== 'admin')) {
-            header('Location: index.php');
-            exit;
+        if (isset($_SESSION['user_id']) && isset($_GET['id'])) {
+            $article->deleteArticle($_GET['id'], $_SESSION['user_id'], $_SESSION['role']);
         }
-        if (isset($_GET['id'])) {
-            if ($article->deleteArticle($_GET['id'])) {
-                header('Location: index.php?page=dashboard');
-            } else {
-                $error = "Failed to delete article";
-                include 'views/error.php';
-            }
-        } else {
-            header('Location: index.php');
-        }
-        break;
-    case 'dashboard':
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: index.php?page=login');
-            exit;
-        }
-        if ($_SESSION['role'] === 'admin') {
-            $pendingArticles = $article->getPendingArticles();
-            $allUsers = $user->getAllUsers();
-        } elseif ($_SESSION['role'] === 'auteur') {
-            $userArticles = $article->getArticlesByAuthor($_SESSION['user_id']);
-        }
-        include 'views/dashboard.php';
+        header('Location: index.php?page=dashboard');
         break;
     case 'approve_article':
-        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-            header('Location: index.php');
-            exit;
-        }
-        if (isset($_GET['id'])) {
-            if ($article->approveArticle($_GET['id'])) {
-                header('Location: index.php?page=dashboard');
-            } else {
-                $error = "Failed to approve article";
-                include 'views/error.php';
-            }
+        if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'admin' && isset($_GET['id'])) {
+            $article->approveArticle($_GET['id']);
+            header('Location: index.php?page=dashboard');
         } else {
             header('Location: index.php');
         }
         break;
     case 'reject_article':
-        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-            header('Location: index.php');
-            exit;
-        }
-        if (isset($_GET['id'])) {
-            if ($article->rejectArticle($_GET['id'])) {
-                header('Location: index.php?page=dashboard');
-            } else {
-                $error = "Failed to reject article";
-                include 'views/error.php';
-            }
+        if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'admin' && isset($_GET['id'])) {
+            $article->rejectArticle($_GET['id']);
+            header('Location: index.php?page=dashboard');
         } else {
             header('Location: index.php');
         }
         break;
     case 'manage_categories':
-        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-            header('Location: index.php');
-            exit;
-        }
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (isset($_POST['action'])) {
-                switch ($_POST['action']) {
-                    case 'add':
-                        $category->addCategory($_POST['name']);
-                        break;
-                    case 'edit':
-                        $category->updateCategory($_POST['id'], $_POST['name']);
-                        break;
-                    case 'delete':
-                        $category->deleteCategory($_POST['id']);
-                        break;
+        if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'admin') {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (isset($_POST['action'])) {
+                    switch ($_POST['action']) {
+                        case 'create':
+                            $category->createCategory($_POST['nom_categorie']);
+                            break;
+                        case 'update':
+                            $category->updateCategory($_POST['id_categorie'], $_POST['nom_categorie']);
+                            break;
+                        case 'delete':
+                            $category->deleteCategory($_POST['id_categorie']);
+                            break;
+                    }
                 }
             }
-        }
-        $categories = $category->getAllCategories();
-        include 'views/manage_categories.php';
-        break;
-    case 'manage_users':
-        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-            header('Location: index.php');
-            exit;
-        }
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (isset($_POST['action'])) {
-                switch ($_POST['action']) {
-                    case 'change_role':
-                        $user->changeUserRole($_POST['id'], $_POST['role']);
-                        break;
-                    case 'ban':
-                        $user->banUser($_POST['id']);
-                        break;
-                    case 'unban':
-                        $user->unbanUser($_POST['id']);
-                        break;
-                }
-            }
-        }
-        $users = $user->getAllUsers();
-        include 'views/manage_users.php';
-        break;
-    case 'profile':
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: index.php?page=login');
-            exit;
-        }
-        $userData = $user->getUserById($_SESSION['user_id']);
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'];
-            $email = $_POST['email'];
-            $password = !empty($_POST['password']) ? $_POST['password'] : null;
-            $photo = $userData['photo'];
-            $uploadDir = 'uploads/profiles/';
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-                $photoName = uniqid() . '_' . basename($_FILES['photo']['name']);
-                $uploadFile = $uploadDir . $photoName;
-                if (move_uploaded_file($_FILES['photo']['tmp_name'], $uploadFile)) {
-                    $photo = $uploadFile;
-                }
-            }
-            if ($user->updateProfile($_SESSION['user_id'], $username, $email, $password, $photo)) {
-                $success = "Profile updated successfully";
-            } else {
-                $error = "Failed to update profile";
-            }
-            $userData = $user->getUserById($_SESSION['user_id']);
-        }
-        include 'views/profile.php';
-        break;
-    case 'add_comment':
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: index.php?page=login');
-            exit;
-        }
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['article_id']) && isset($_POST['content'])) {
-            if ($comment->addComment($_POST['article_id'], $_SESSION['user_id'], $_POST['content'])) {
-                header('Location: index.php?page=article&id=' . $_POST['article_id']);
-            } else {
-                $error = "Failed to add comment";
-                include 'views/error.php';
-            }
+            $allCategories = $category->getAllCategories();
+            include 'views/manage_categories.php';
         } else {
             header('Location: index.php');
         }
         break;
-    case 'delete_comment':
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: index.php?page=login');
-            exit;
+    case 'user_profile':
+        if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'admin' && isset($_GET['id'])) {
+            $userData = $user->getUserById($_GET['id']);
+            include 'views/user_profile.php';
+        } else {
+            header('Location: index.php');
         }
-        if (isset($_GET['id']) && isset($_GET['article_id'])) {
-            if ($comment->deleteComment($_GET['id'], $_SESSION['user_id'], $_SESSION['role'])) {
-                header('Location: index.php?page=article&id=' . $_GET['article_id']);
+        break;
+        case 'ban_user':
+            if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'admin' && isset($_GET['id'])) {
+                $user->banUser ($_GET['id']);
+                header('Location: index.php?page=dashboard');
             } else {
-                $error = "Failed to delete comment";
-                include 'views/error.php';
+                header('Location: index.php');
             }
+            break;
+        
+        case 'unban_user':
+            if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'admin' && isset($_GET['id'])) {
+                $user->unbanUser ($_GET['id']);
+                header('Location: index.php?page=dashboard');
+            } else {
+                header('Location: index.php');
+            }
+            break;
+    case 'delete_user':
+        if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'admin' && isset($_GET['id'])) {
+            $user->deleteUser($_GET['id']);
+            header('Location: index.php?page=dashboard');
         } else {
             header('Location: index.php');
         }
         break;
-    case 'like_article':
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: index.php?page=login');
-            exit;
-        }
-        if (isset($_GET['id'])) {
-            $like->toggleLike($_GET['id'], $_SESSION['user_id']);
-            header('Location: index.php?page=article&id=' . $_GET['id']);
-        } else {
-            header('Location: index.php');
-        }
+    case 'logout':
+        $user->logout();
         break;
-    case 'favorite_article':
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: index.php?page=login');
-            exit;
-        }
-        if (isset($_GET['id'])) {
-            $favorite->toggleFavorite($_GET['id'], $_SESSION['user_id']);
-            header('Location: index.php?page=article&id=' . $_GET['id']);
+    case 'edit_profile':
+        if (isset($_SESSION['user_id'])) {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $photo = isset($_FILES['photo']) ? $_FILES['photo'] : null;
+                if ($user->updateProfile($_SESSION['user_id'], $_POST['nom_utilisateur'], $_POST['email'], $_POST['new_password'], $photo)) {
+                    header('Location: index.php?page=dashboard&message=profile_updated');
+                } else {
+                    header('Location: index.php?page=edit_profile&error=update_failed');
+                }
+            } else {
+                include 'views/edit_profile.php';
+            }
         } else {
             header('Location: index.php');
         }
         break;
     case 'search':
-        $keyword = isset($_GET['keyword']) ? $_GET['keyword'] : '';
-        $searchResults = $article->searchArticles($keyword);
+        $searchQuery = isset($_GET['query']) ? trim($_GET['query']) : '';
+        $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+        $limit = 6;
+
+        if (!empty($searchQuery)) {
+            $searchResults = $article->searchArticles($searchQuery, $page, $limit);
+            $totalResults = $article->getTotalSearchResults($searchQuery);
+            $totalPages = ceil($totalResults / $limit);
+        } else {
+            $searchResults = [];
+            $totalPages = 0;
+        }
+
         include 'views/search_results.php';
         break;
-    case 'category':
-        if (isset($_GET['id'])) {
-            $categoryInfo = $category->getCategoryById($_GET['id']);
-            $categoryArticles = $article->getArticlesByCategory($_GET['id']);
-            include 'views/category.php';
-        } else {
-            header('Location: index.php');
-        }
-        break;
     default:
-        include 'views/404.php';
+        header('Location: index.php');
         break;
 }
 
