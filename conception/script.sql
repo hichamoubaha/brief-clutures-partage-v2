@@ -120,3 +120,18 @@ INSERT INTO article_tags (id_article, id_tag) VALUES
 (1, 1), (1, 3), (1, 4),
 (2, 2), (2, 5),
 (3, 1), (3, 3);
+
+
+
+-- 1 Création d'une vue
+
+CREATE VIEW articles_les_plus_likes AS
+SELECT a.titre, COUNT(l.id_like) AS nombre_likes, c.nom_categorie
+FROM articles a
+JOIN likes l ON a.id_article = l.id_article
+JOIN categories c ON a.id_categorie = c.id_categorie
+WHERE a.statut = 'approuve'
+GROUP BY a.id_article
+ORDER BY nombre_likes DESC;
+
+
