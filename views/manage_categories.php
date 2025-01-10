@@ -1,27 +1,3 @@
-<?php
-// Database connection
-$host = 'localhost';
-$dbname = 'culture_platform_v2';
-$username = 'root'; // Update with your DB username
-$password = ''; // Update with your DB password
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Erreur de connexion à la base de données : " . $e->getMessage());
-}
-
-// Fetch categories
-$allCategories = [];
-try {
-    $stmt = $pdo->query("SELECT * FROM categories ORDER BY date_creation DESC");
-    $allCategories = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    echo "Erreur lors de la récupération des catégories : " . $e->getMessage();
-}
-?>
-
 <h1 class="text-3xl font-bold mb-6">Gestion des catégories</h1>
 
 <div class="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -40,27 +16,23 @@ try {
 <div class="bg-white rounded-lg shadow-md p-6">
     <h2 class="text-xl font-semibold mb-4">Liste des catégories</h2>
     <ul>
-        <?php if (!empty($allCategories) && is_array($allCategories)): ?>
-            <?php foreach ($allCategories as $category): ?>
-                <li class="mb-4 p-4 border rounded flex items-center justify-between">
-                    <span><?php echo htmlspecialchars($category['nom_categorie']); ?></span>
-                    <div>
-                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mr-2 edit-category" data-id="<?php echo $category['id_categorie']; ?>" data-name="<?php echo htmlspecialchars($category['nom_categorie']); ?>">
-                            Modifier
+        <?php foreach ($allCategories as $category): ?>
+            <li class="mb-4 p-4 border rounded flex items-center justify-between">
+                <span><?php echo htmlspecialchars($category['nom_categorie']); ?></span>
+                <div>
+                    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mr-2 edit-category" data-id="<?php echo $category['id_categorie']; ?>" data-name="<?php echo htmlspecialchars($category['nom_categorie']); ?>">
+                        Modifier
+                    </button>
+                    <form action="index.php?page=manage_categories" method="POST" class="inline">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="id_categorie" value="<?php echo $category['id_categorie']; ?>">
+                        <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?');">
+                            Supprimer
                         </button>
-                        <form action="index.php?page=manage_categories" method="POST" class="inline">
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="id_categorie" value="<?php echo $category['id_categorie']; ?>">
-                            <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?');">
-                                Supprimer
-                            </button>
-                        </form>
-                    </div>
-                </li>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <li class="text-gray-600">Aucune catégorie disponible.</li>
-        <?php endif; ?>
+                    </form>
+                </div>
+            </li>
+        <?php endforeach; ?>
     </ul>
 </div>
 
