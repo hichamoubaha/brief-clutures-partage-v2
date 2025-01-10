@@ -147,3 +147,13 @@ BEGIN
 END $$
 
 DELIMITER ;
+
+-- 3 Requête SQL
+
+SELECT t.nom_tag, COUNT(at.id_article) AS nombre_associations
+FROM tags t
+JOIN article_tags at ON t.id_tag = at.id_tag
+JOIN articles a ON at.id_article = a.id_article
+WHERE a.date_creation >= NOW() - INTERVAL 30 DAY
+GROUP BY t.id_tag
+ORDER BY nombre_associations DESC;
