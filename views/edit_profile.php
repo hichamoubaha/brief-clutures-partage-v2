@@ -12,6 +12,13 @@ $userData = $user->getUserById($user_id);
         </h1>
         
         <div class="bg-white py-8 px-6 shadow-xl rounded-2xl">
+            <!-- Profile Photo Section (Centered and Positioned at Top) -->
+            <?php if (!empty($userData['photo'])): ?>
+                <div class="flex justify-center mb-6">
+                    <img src="<?php echo htmlspecialchars($userData['photo']); ?>" alt="Photo de profil" class="w-32 h-32 object-cover rounded-full">
+                </div>
+            <?php endif; ?>
+
             <form id="editProfileForm" action="index.php?page=edit_profile" method="POST" enctype="multipart/form-data" class="space-y-6">
                 <div>
                     <label for="nom_utilisateur" class="block text-sm font-medium text-gray-700">
@@ -66,13 +73,6 @@ $userData = $user->getUserById($user_id);
                                class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     </div>
                 </div>
-
-                <?php if (!empty($userData['photo'])): ?>
-                    <div>
-                        <p class="text-sm font-medium text-gray-700">Photo de profil actuelle :</p>
-                        <img src="<?php echo htmlspecialchars($userData['photo']); ?>" alt="Photo de profil" class="mt-2 w-32 h-32 object-cover rounded-full">
-                    </div>
-                <?php endif; ?>
 
                 <div class="pt-4">
                     <button type="submit" 
@@ -135,4 +135,3 @@ $userData = $user->getUserById($user_id);
         });
     });
 </script>
-

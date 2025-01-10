@@ -1,13 +1,16 @@
 <?php
 $is_authenticated = isset($_SESSION['user_id']);
 ?>
- <form action="index.php?page=search" method="GET" class="flex items-center">
-                <input type="hidden" name="page" value="search">
-                <input type="text" name="query" placeholder="Rechercher un article..." class="px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    Rechercher
-                </button>
-            </form>
+ <div class="flex justify-center my-4">
+    <form action="index.php?page=search" method="GET" class="flex items-center">
+        <input type="hidden" name="page" value="search">
+        <input type="text" name="query" placeholder="Rechercher un article..." class="px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            Rechercher
+        </button>
+    </form>
+</div>
+
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <h1 class="text-4xl font-extrabold text-gray-900 mb-12 text-center">
         <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
